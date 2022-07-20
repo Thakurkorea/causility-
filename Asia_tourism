@@ -1,0 +1,83 @@
+# https://www.r-bloggers.com/2021/11/vector-autoregressive-model-var-using-r/#:~:text=For%20a%20vector%20times%20series,model%20and%20error%20correction%20equations.
+setwd("E:/Initial_data_notebook_0412/Nepal_tourism/Causility")
+library(bruceR)
+## Not run: 
+# R package "vars" should be installed
+library(vars)
+library(texreg)
+library(tseries)
+# data(Canada)
+# VARselect(Canada)
+
+getwd()
+
+# load_data<-read.csv(file.choose())
+track<-read.csv('Final data for granger causality.csv')
+track<-na.omit(track) # remove na-value if any
+unique(track[1,]) # to know the country details 
+India<-track[,2:7]  # year column is not considered 
+Nepal<-track[,8:13]
+Bangladesh<-track[,14:19]
+Pakistan<-track[,20:25]
+Sri_Lanka<-track[,26:31]
+dim(cbind(India,Nepal,Bangladesh,Pakistan,Sri_Lanka))
+dim(track)
+
+
+cc<-'Sri_Lanka' # Please change the name of country of simulation
+
+
+
+
+Country=Sri_Lanka # Just change country here 
+track<-Country[4:nrow(Country),]
+track<-as.data.frame(apply(track, 2, as.numeric))
+vari<-Country[1:ncol(Country)][3,]
+names(track)<-vari
+names(track)
+track
+summary(track)
+plot(track)
+# track$PopG<-log(track$PopG) # changing large number to log scale
+# track$GDP<-log(track$GDP) # changing large number to log scale
+# plot(track[,1:4],pch=16)
+aa<-cor(track)
+filename<-paste0( cc, "Cor.csv")
+write.csv(aa,filename)  # save the correlation matrix in csv
+
+
+
+for (rep in 1:10){     # replication to make stationary with less than 0.05 interval 
+for(i in 1:(length(track))){
+ stcheck<-adf.test(track[,i])
+ pval<- stcheck$p.value
+ print(stcheck$p.value) # check p-value
+ if (pval>=0.05){
+   track[1:nrow(track)-1,i]<-diff(track[,i])
+ }
+}
+}
+# let's check stationary
+# pairs(track[,1:4],pch=16)
+track<-track[1:nrow(track)-1,]
+# example with raw column data 
+# M1<-  c(2,3, 1, 4, 3, 3, 1,1, 5, 7)
+# M2<- c(7,3, 6, 9, 1, 2, 1,2, 8, 1)
+# M3<- c(1, 3, 1,5, 7,3, 1, 3, 3, 4)
+# track<-data.frame(cbind(M1,M2,M3))
+# let's check var and causality 
+cor(track)
+vm = VAR(track, p=3)
+model_summary(vm)
+GData<-granger_causality(vm)
+RData<-GData$result
+filename<-filename<-paste0( cc, "Causal.csv")
+write.csv(RData,filename)  # save the correlation matrix in csv  # save the correlation matrix in csv
+# write.csv(GData$result,'causality.csv')
+# sing lmtest
+# library(lmtest)
+# grangertest(track$co2..5.~track$Population..57.,order=3)
+
+## End(Not run)
+# track
+
